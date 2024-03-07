@@ -1,0 +1,84 @@
+*&---------------------------------------------------------------------*
+*& Report ZTESTE_DIEGO_JSON
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zteste_diego_json.
+
+
+CLASS demo DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS main.
+ENDCLASS.
+
+CLASS demo IMPLEMENTATION.
+  METHOD main.
+
+    DATA: lt_flight TYPE STANDARD TABLE OF sflight,
+          lrf_descr TYPE REF TO cl_abap_typedescr,
+          lv_json   TYPE /ui2/cl_json=>json.
+
+    TYPES: BEGIN OF ty_budget,
+             date  TYPE string,
+           END OF ty_budget,
+           BEGIN OF ty_pep,
+             cod    TYPE string,
+             name   TYPE string,
+             parent TYPE string,
+             nivel  TYPE string,
+             budget TYPE TABLE OF ty_budget WITH key date,
+           END OF ty_pep,
+           BEGIN OF ty_project,
+             cod TYPE string,
+             pep TYPE TABLE OF ty_pep WITH KEY cod,
+           END OF ty_project,
+           BEGIN OF ty_response,
+             id TYPE string,
+             project TYPE TABLE OF ty_project WITH KEY cod,
+           END OF ty_response.
+
+    DATA: ls_response TYPE ty_response.
+
+    APPEND INITIAL LINE TO ls_response-project ASSIGNING FIELD-SYMBOL(<fs_proj>).
+    <fs_proj>-cod = 'C/1010.21.001'.
+
+    APPEND INITIAL LINE TO <fs_proj>-pep ASSIGNING FIELD-SYMBOL(<fs_pep>).
+    <fs_pep>-cod    = 'C/1010.21.001/121 .1'.
+    <fs_pep>-name   = 'Consulting Services'.
+    <fs_pep>-parent = 'C/1010.21.001/121'.
+    <fs_pep>-nivel  = '4'.
+*
+    APPEND INITIAL LINE TO <fs_pep>-budget ASSIGNING FIELD-SYMBOL(<fs_budget>).
+    <fs_budget>-date = '2021-11-04'.
+    APPEND INITIAL LINE TO <fs_pep>-budget ASSIGNING <fs_budget>.
+    <fs_budget>-date = '2021-11-05'.
+
+    APPEND INITIAL LINE TO <fs_proj>-pep ASSIGNING <fs_pep>.
+    <fs_pep>-cod    = 'C/1010.21.001/118 .1'.
+    <fs_pep>-name   = 'SOPORTE ADMINISTRATIVO SERVICIO CENTRAL'.
+    <fs_pep>-parent = 'C/1010.21.001/118'.
+    <fs_pep>-nivel  = '3'.
+
+    APPEND INITIAL LINE TO <fs_pep>-budget ASSIGNING <fs_budget>.
+    <fs_budget>-date = '2021-11-04'.
+    APPEND INITIAL LINE TO <fs_pep>-budget ASSIGNING <fs_budget>.
+    <fs_budget>-date = '2021-11-05'.
+
+
+*    SELECT * FROM sflight INTO TABLE lt_flight.
+
+    " serialize table lt_flight into JSON, skipping initial fields and converting ABAP field names into camelCase
+    lv_json = /ui2/cl_json=>serialize( data        = ls_response
+                                       pretty_name = /ui2/cl_json=>pretty_mode-camel_case
+                                       compress    = abap_true
+                                       ).
+
+    cl_demo_output=>write_json( lv_json ).
+
+    cl_demo_output=>display( ).
+
+  ENDMETHOD.
+ENDCLASS.
+
+START-OF-SELECTION.
+  demo=>main( ).
